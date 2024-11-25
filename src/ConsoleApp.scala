@@ -1,7 +1,6 @@
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.io.StdIn.readInt
-import scala.io.Source
 import scala.util.Using
 
 object ConsoleApp extends App {
@@ -13,17 +12,9 @@ object ConsoleApp extends App {
   // Read data from file
   private val mapData: Map[Int, List[(String, Float, Int)]] = readFile("./src/resources/data.txt")
 
-  // Display loaded data for verification
-  displayData(mapData)
-
-
   // Define new menu options as a Map of actions
   private val actionMap: Map[Int, () => Boolean] = Map(
-    1 ->
-      (() => {
-        println("Option 1 selected")
-        true
-      }),
+    1 -> handleDisplayData, // Option 1: Display winner and stats from each season
     6 -> handleQuit // Option 6: Quit the application
 
   )
@@ -69,6 +60,12 @@ object ConsoleApp extends App {
   // MENU ACTION HANDLERS
   // *******************************************************************************************************************
 
+  private def handleDisplayData(): Boolean =
+  {
+    println("Option 1 selected...")
+    displayData(mapData)
+    true
+  }
 
   // Handles the action for quitting the application
   private def handleQuit(): Boolean =
@@ -88,13 +85,15 @@ object ConsoleApp extends App {
     // Base case (no more data to display) activates when nonempty is false
     if (data.nonEmpty)
     {
+      println()
       // Extract the first entry from the map (season is identifier int, driver is list of tuples)
       val (season, drivers) = data.head
       println(s"Season $season:")
+      // Display each driver's data
       drivers.foreach
       {
         case (driver, points, wins) =>
-          println(s"  Driver: $driver, Points: $points, Wins: $wins")
+          println(s"Driver: $driver, Points: $points, Wins: $wins")
       }
       // Tail recursively call the function with the remaining data
       displayData(data.tail)
