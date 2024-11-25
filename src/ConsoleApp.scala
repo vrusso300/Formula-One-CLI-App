@@ -19,8 +19,12 @@ object ConsoleApp extends App {
 
   )
 
-  // Start the application loop
+  // Start the application by entering the menu loop
   menuLoop()
+
+  // *******************************************************************************************************************
+  // MENU HANDLING FUNCTIONS
+  // *******************************************************************************************************************
 
   // Function to handle the menu loop
   private def menuLoop() : Unit = {
@@ -39,17 +43,12 @@ object ConsoleApp extends App {
         // Wait for boolean return value from the action
         processMenuOption(nextOption) match {
           case true => loop(nextOption) // If true is returned, continue the loop (pattern match)
-          case false => 6 // If false is returned, exit the loop
+          case false => 6 // If false is returned, exit the loop aka base case
         }
     }
     // Start the loop with the initial number (0)
     loop(number)
   }
-
-  // *******************************************************************************************************************
-  // MENU HANDLING FUNCTIONS
-  // *******************************************************************************************************************
-
 
   // Displays the menu and reads user input
   // returns the menu option selected by the user
@@ -66,6 +65,7 @@ object ConsoleApp extends App {
   }
 
 
+  // Processes the menu option selected by the user
   private def processMenuOption(option: Int): Boolean = {
     actionMap.get(option) match {
       case Some(action) => action() // Invoke the corresponding action
