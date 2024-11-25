@@ -20,13 +20,12 @@ object ConsoleApp extends App {
   )
 
   // Start the application loop
-  private val opt: Int = 0
-  menuLoop(opt)
+  menuLoop()
 
   // Function to handle the menu loop
-  private def menuLoop(option: Int) : Unit = {
-    // Application menu loop
-    var number: Int = option
+  private def menuLoop() : Unit = {
+    // Define initial number for the loop
+    val number = 0
 
     // Define tailrec loop for menu-ing
     @tailrec
@@ -36,13 +35,14 @@ object ConsoleApp extends App {
       // Recursive case: Continue the loop
       case _ =>
         // Display the menu and read the user input integer
-        number = displayMenuAndReadOption()
+        val nextOption = displayMenuAndReadOption()
         // Wait for boolean return value from the action
-        processMenuOption(number) match {
-          case true => loop(number) // If true is returned, continue the loop (pattern match)
+        processMenuOption(nextOption) match {
+          case true => loop(nextOption) // If true is returned, continue the loop (pattern match)
           case false => 6 // If false is returned, exit the loop
         }
     }
+    // Start the loop with the initial number (0)
     loop(number)
   }
 
