@@ -1,5 +1,8 @@
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.io.StdIn.readInt
+import scala.io.Source
+import scala.util.Using
 
 object ConsoleApp extends App {
 
@@ -8,23 +11,25 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
 
   // Read data from file
-  val mapData: Map[String, Int] = readFile("./src/data.txt")
+  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile("./src/resources/data.txt")
 
   // Display loaded data for verification
-  println(mapData)
+  displayData(mapData)
+
 
   // Define new menu options as a Map of actions
-  val actionMap: Map[Int, () => Boolean] = Map(
+  private val actionMap: Map[Int, () => Boolean] = Map(
     1 ->
       (() => {
         println("Option 1 selected")
         true
       }),
+    6 -> handleQuit // Option 6: Quit the application
 
   )
 
   // Application menu loop
-  var opt: Int = 0
+  private var opt: Int = 0
   do {
     opt = displayMenuAndReadOption() // Show menu and get user input
   }
@@ -38,7 +43,7 @@ object ConsoleApp extends App {
 
   // Displays the menu and reads user input
   // returns the menu option selected by the user
-  def displayMenuAndReadOption(): Int = {
+  private def displayMenuAndReadOption(): Int = {
     println(
       """|Please select one of the following:
          |  1 - Display winner and stats from each season
@@ -51,7 +56,7 @@ object ConsoleApp extends App {
   }
 
 
-  def processMenuOption(option: Int): Boolean = {
+  private def processMenuOption(option: Int): Boolean = {
     actionMap.get(option) match {
       case Some(action) => action() // Invoke the corresponding action
       case None =>
@@ -65,38 +70,92 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
 
 
+  // Handles the action for quitting the application
+  private def handleQuit(): Boolean =
+  {
+    println("Quitting the application...")
+    false // Return false to exit the application loop
+  }
+
+  // *******************************************************************************************************************
+  // USER INTERACTION FUNCTIONS
+  // *******************************************************************************************************************
+
+
+  // Displays the data for each season
+  @tailrec
+  private def displayData(data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    // Base case (no more data to display) activates when nonempty is false
+    if (data.nonEmpty)
+    {
+      // Extract the first entry from the map (season is identifier int, driver is list of tuples)
+      val (season, drivers) = data.head
+      println(s"Season $season:")
+      drivers.foreach
+      {
+        case (driver, points, wins) =>
+          println(s"  Driver: $driver, Points: $points, Wins: $wins")
+      }
+      // Tail recursively call the function with the remaining data
+      displayData(data.tail)
+    }
+  }
+
+
   // *******************************************************************************************************************
   // UTILITY FUNCTIONS
   // *******************************************************************************************************************
 
+  private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] =
+  {
 
-
-  import scala.util.Using
-  def readFile(filename: String): Map[String, Int] = {
-    val mapBuffer = scala.collection.mutable.Map[String, Int]()
+    var mapData = Map[Int, List[(String, Float, Int)]]()
 
     try {
-      Using(Source.fromFile(filename)) { source =>
-        for (line <- source.getLines()) {
-          val splitline = line.split(",").map(_.trim)
-          if (splitline.length >= 2) {
-            try {
-              mapBuffer(splitline.head) = splitline(1).toInt
-            } catch {
-              case _: NumberFormatException =>
-                println(s"Skipping invalid numeric value in line: $line")
+      // Safely manage file reading
+      Using(Source.fromFile(fileName)) { bufferedSource =>
+        var seasonData = List[(String, Float, Int)]()
+        var currentSeason = -1
+
+        for (line <- bufferedSource.getLines()) {
+          println(s"Reading line: $line")
+          val splitLine = line.split(",", 2).map(_.trim) // Split line into season and drivers
+          val season = splitLine(0).toInt
+          val allDrivers = splitLine(1).split(",").map(_.trim) // Split all drivers into individual entries
+
+          if (season != currentSeason) {
+            // Save the previous season data and reset
+            if (currentSeason != -1) {
+              mapData += (currentSeason -> seasonData)
             }
-          } else {
-            println(s"Skipping malformed line: $line")
+            currentSeason = season
+            println(s"New season: $currentSeason") // Debug print
+            seasonData = List()
+          }
+
+          // Process each driver entry
+          for (driverEntry <- allDrivers) {
+            val driverDetails = driverEntry.split(":").map(_.trim)
+            val name = driverDetails(0)
+            val stats = driverDetails(1).split(" ").map(_.trim)
+            val points = stats(0).toFloat
+            val wins = stats(1).toInt
+            seasonData = seasonData :+ (name, points, wins)
           }
         }
-      }.get // Get the result or throw any errors
+
+        // Save the last season's data
+        if (currentSeason != -1) {
+          mapData += (currentSeason -> seasonData)
+        }
+      }
     } catch {
-      case ex: Exception =>
-        println(s"Failed to read file: ${ex.getMessage}")
-        throw ex // Rethrow the exception or handle as necessary
+      case e: Exception =>
+        println(s"Error reading file: ${e.getMessage}")
     }
-    mapBuffer.toMap
+
+    println(s"Loaded data: $mapData") // Debug print
+    mapData
   }
 
 }
