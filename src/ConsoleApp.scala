@@ -19,13 +19,32 @@ object ConsoleApp extends App {
 
   )
 
-  // Application menu loop
-  private var opt: Int = 0
-  do {
-    opt = displayMenuAndReadOption() // Show menu and get user input
-  }
-  while (processMenuOption(opt)) // Process user choice until quit option
+  // Start the application loop
+  private val opt: Int = 0
+  menuLoop(opt)
 
+  // Function to handle the menu loop
+  private def menuLoop(option: Int) : Unit = {
+    // Application menu loop
+    var number: Int = option
+
+    // Define tailrec loop for menu-ing
+    @tailrec
+    def loop(n: Int): Int = n match {
+      // Base case: Exit the loop
+      case 6 => 6
+      // Recursive case: Continue the loop
+      case _ =>
+        // Display the menu and read the user input integer
+        number = displayMenuAndReadOption()
+        // Wait for boolean return value from the action
+        processMenuOption(number) match {
+          case true => loop(number) // If true is returned, continue the loop (pattern match)
+          case false => 6 // If false is returned, exit the loop
+        }
+    }
+    loop(number)
+  }
 
   // *******************************************************************************************************************
   // MENU HANDLING FUNCTIONS
@@ -83,6 +102,7 @@ object ConsoleApp extends App {
   @tailrec
   private def displayData(data: Map[Int, List[(String, Float, Int)]]): Unit = {
     // Base case (no more data to display) activates when nonempty is false
+
     if (data.nonEmpty)
     {
       println()
