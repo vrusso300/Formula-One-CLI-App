@@ -1,6 +1,6 @@
 import scala.annotation.tailrec
 import scala.io.Source
-import scala.io.StdIn.{readInt, readLine}
+import scala.io.StdIn.readLine
 import scala.util.Using
 import scala.util.Try
 
@@ -13,13 +13,13 @@ object ConsoleApp extends App {
   // Read data from file
   private val mapData: Map[Int, List[(String, Float, Int)]] = readFile("./src/resources/data.txt")
 
-  // Define new menu options as a Map of actions
+  // Define new menu options as a map of actions
   private val actionMap: Map[Int, () => Boolean] = Map(
-    1 -> handleDisplayData, // Option 1: Display winner and stats from each season
+    1 -> handleDisplayWinners,
+    2 -> handleDisplayWins,
     6 -> handleQuit // Option 6: Quit the application
 
   )
-
   // Start the application by entering the menu loop
   menuLoop()
 
@@ -27,15 +27,13 @@ object ConsoleApp extends App {
   // MENU HANDLING FUNCTIONS
   // *******************************************************************************************************************
 
-  // Function to handle the menu options
-
 
   // Function to process the menu, declarative style
   private def menuLoop(): Unit = {
     // Set of expected options in the application
     val expectedOptions = Set(1, 2, 3, 4, 5, 6)
 
-    // Pure function to validate and process the input
+    // Pure function to validate and process the input string
     def handleInput(input: String): Either[String, Option[Int]] =
       Try(input.toInt).toOption match {
         case Some(option) if expectedOptions.contains(option) =>
@@ -59,8 +57,8 @@ object ConsoleApp extends App {
           loop()
       }
     }
-
-    loop() // Start the loop
+    // Start loop
+    loop()
   }
 
   // Displays the menu and reads user input
@@ -82,7 +80,6 @@ object ConsoleApp extends App {
 
   // Processes the menu option selected by the user
   private def processMenuOption(option: Int): Boolean = {
-
     actionMap.get(option) match {
       case Some(action) => action() // Invoke the corresponding action
       case None =>
@@ -95,11 +92,18 @@ object ConsoleApp extends App {
   // MENU ACTION HANDLERS
   // *******************************************************************************************************************
 
-  private def handleDisplayData(): Boolean = {
+  private def handleDisplayWinners(): Boolean = {
     println("Option 1 selected...")
-    displayData(mapData)
+    displayWinners(getDriverStats, mapData)
     true
   }
+
+  private def handleDisplayWins(): Boolean = {
+    println("Option 2 selected...")
+    displayWins(getTotalWins, mapData)
+    true
+  }
+
 
   // Handles the action for quitting the application
   private def handleQuit(): Boolean = {
@@ -111,25 +115,45 @@ object ConsoleApp extends App {
   // USER INTERACTION FUNCTIONS
   // *******************************************************************************************************************
 
-
-  // Displays the data for each season
-  @tailrec
-  private def displayData(data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    // Base case (no more data to display) activates when nonempty is false
-
-    if (data.nonEmpty) {
-      println()
-      // Extract the first entry from the map (season is identifier int, driver is list of tuples)
-      val (season, drivers) = data.head
-      println(s"Season $season:")
-      // Display each driver's data
-      drivers.foreach {
-        case (driver, points, wins) =>
-          println(s"Driver: $driver, Points: $points, Wins: $wins")
-      }
-      // Tail recursively call the function with the remaining data
-      displayData(data.tail)
+  // Frontend higher-order function to display all winners
+  private def displayWinners(getStats: Map[Int, List[(String, Float, Int)]] => Map[Int, (String, Float, Int)], data: Map[Int, List[(String, Float, Int)]]) : Unit = {
+    // Invoke the backend function to get the processed data
+    val stats = getStats(data)
+    // Display the results (driver name, points, wins, for each season)
+    stats.foreach { case (season, (driver, points, wins)) =>
+      println(s"Season $season: Driver: $driver, Points: $points, Wins: $wins")
     }
+  }
+
+  // Frontend higher-order function to display total wins
+  private def displayWins(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]) : Unit = {
+    val wins = getWins(data)
+    // Display the results
+    wins.foreach { case (season, totalWins) =>
+      println(s"Season $season: Total Wins: $totalWins")
+    }
+  }
+
+  // *******************************************************************************************************************
+  // DATA OPERATION FUNCTIONS
+  // *******************************************************************************************************************
+
+  // Backend functionthat extracts and processes the data
+  private def getDriverStats(data: Map[Int, List[(String, Float, Int)]]): Map[Int, (String, Float, Int)] = {
+    data.map { case (season, drivers) =>
+      val bestDriver = drivers.maxBy(_._2)
+      season -> (bestDriver._1, bestDriver._2, bestDriver._3)
+    }
+
+  }
+
+  // Backend function to get total wins
+  private def getTotalWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Int] = {
+    data.map { case (season, drivers) =>
+      val totalWins = drivers.map(_._3).sum
+      season -> totalWins
+    }
+
   }
 
 
@@ -138,7 +162,6 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
 
   private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
-
     var mapData = Map[Int, List[(String, Float, Int)]]()
 
     try {
@@ -162,7 +185,6 @@ object ConsoleApp extends App {
             println(s"New season: $currentSeason") // Debug print
             seasonData = List()
           }
-
           // Process each driver entry
           for (driverEntry <- allDrivers) {
             val driverDetails = driverEntry.split(":").map(_.trim)
@@ -183,7 +205,6 @@ object ConsoleApp extends App {
       case e: Exception =>
         println(s"Error reading file: ${e.getMessage}")
     }
-
     println(s"Loaded data: $mapData") // Debug print
     mapData
   }
