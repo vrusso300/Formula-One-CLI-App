@@ -1,7 +1,8 @@
 import scala.annotation.tailrec
 import scala.io.Source
-import scala.io.StdIn.readInt
+import scala.io.StdIn.{readInt, readLine}
 import scala.util.Using
+import scala.util.Try
 
 object ConsoleApp extends App {
 
@@ -26,33 +27,45 @@ object ConsoleApp extends App {
   // MENU HANDLING FUNCTIONS
   // *******************************************************************************************************************
 
-  // Function to handle the menu loop
-  private def menuLoop() : Unit = {
-    // Define initial number for the loop
-    val number = 0
+  // Function to handle the menu options
 
-    // Define tailrec loop for menu-ing
+
+  // Function to process the menu, declarative style
+  private def menuLoop(): Unit = {
+    // Set of expected options in the application
+    val expectedOptions = Set(1, 2, 3, 4, 5, 6)
+
+    // Pure function to validate and process the input
+    def handleInput(input: String): Either[String, Option[Int]] =
+      Try(input.toInt).toOption match {
+        case Some(option) if expectedOptions.contains(option) =>
+          if (option == 6) Right(None) // Signal to exit
+          else Right(Some(option)) // Valid option
+        case _ => Left("Invalid input. Please enter a valid number.")
+      }
+
+    // Tail-recursive menu loop
     @tailrec
-    def loop(n: Int): Int = n match {
-      // Base case: Exit the loop
-      case 6 => 6
-      // Recursive case: Continue the loop
-      case _ =>
-        // Display the menu and read the user input integer
-        val nextOption = displayMenuAndReadOption()
-        // Wait for boolean return value from the action
-        processMenuOption(nextOption) match {
-          case true => loop(nextOption) // If true is returned, continue the loop (pattern match)
-          case false => 6 // If false is returned, exit the loop aka base case
-        }
+    def loop(): Unit = {
+      // Collect user input and process it
+      val input = displayMenuAndReadOption()
+      handleInput(input) match {
+        case Right(None) => println("Exiting the program.") // Exit case
+        case Right(Some(option)) =>
+          if (processMenuOption(option)) loop() // Process option and continue
+          else println("Exiting due to action result.")
+        case Left(error) =>
+          println(error) // Display error and retry
+          loop()
+      }
     }
-    // Start the loop with the initial number (0)
-    loop(number)
+
+    loop() // Start the loop
   }
 
   // Displays the menu and reads user input
   // returns the menu option selected by the user
-  private def displayMenuAndReadOption(): Int = {
+  private def displayMenuAndReadOption(): String = {
     println(
       """|Please select one of the following:
          |  1 - Display winner and stats from each season
@@ -61,12 +74,15 @@ object ConsoleApp extends App {
          |  4 - Display total points per season
          |  5 - Display a drivers stats
          |  6 - Quit""".stripMargin)
-    readInt()
+    val input = readLine()
+    input
+
   }
 
 
   // Processes the menu option selected by the user
   private def processMenuOption(option: Int): Boolean = {
+
     actionMap.get(option) match {
       case Some(action) => action() // Invoke the corresponding action
       case None =>
@@ -79,16 +95,14 @@ object ConsoleApp extends App {
   // MENU ACTION HANDLERS
   // *******************************************************************************************************************
 
-  private def handleDisplayData(): Boolean =
-  {
+  private def handleDisplayData(): Boolean = {
     println("Option 1 selected...")
     displayData(mapData)
     true
   }
 
   // Handles the action for quitting the application
-  private def handleQuit(): Boolean =
-  {
+  private def handleQuit(): Boolean = {
     println("Quitting the application...")
     false // Return false to exit the application loop
   }
@@ -103,15 +117,13 @@ object ConsoleApp extends App {
   private def displayData(data: Map[Int, List[(String, Float, Int)]]): Unit = {
     // Base case (no more data to display) activates when nonempty is false
 
-    if (data.nonEmpty)
-    {
+    if (data.nonEmpty) {
       println()
       // Extract the first entry from the map (season is identifier int, driver is list of tuples)
       val (season, drivers) = data.head
       println(s"Season $season:")
       // Display each driver's data
-      drivers.foreach
-      {
+      drivers.foreach {
         case (driver, points, wins) =>
           println(s"Driver: $driver, Points: $points, Wins: $wins")
       }
@@ -125,8 +137,7 @@ object ConsoleApp extends App {
   // UTILITY FUNCTIONS
   // *******************************************************************************************************************
 
-  private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] =
-  {
+  private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
 
     var mapData = Map[Int, List[(String, Float, Int)]]()
 
