@@ -1,33 +1,41 @@
 
 import scala.annotation.tailrec
-import scala.collection.IterableOnce.iterableOnceExtensionMethods
 import scala.io.Source
 import scala.io.StdIn.readLine
 import scala.util.Using
 import scala.util.Try
 
+// Singleton object
 object ConsoleApp extends App {
 
   // *******************************************************************************************************************
-  // MAIN APPLICATION LOGIC
+  // MAIN APPLICATION LOGIC & GLOBAL VARIABLES/FUNCTIONS
   // *******************************************************************************************************************
+
+  // Path to the data file
+  private val dataFilePath = "./src/resources/data.txt"
+
+  // Read data from file
+  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile(dataFilePath)
 
   // Define new menu options as a map of actions
   private val actionMap: Map[Int, () => Boolean] = Map(
     1 -> handleDisplayWinners,
     2 -> handleDisplaySelection,
     3 -> handleDisplayWins,
-    6 -> handleQuit // Option 6: Quit the application
+    4 -> handleDisplayAvg,
+    5 -> handleDisplayPointsAscending,
+    6 -> handleQuit
   )
 
-  // Read data from file
-  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile("./src/resources/data.txt")
-
-  // More dynamic menu options if needed/added
+  // More dynamic menu option if needed/added in the future
   private val expectedOptions = List.range(1, actionMap.keys.max + 1)
 
-  // Get seasons only
-  private val seasonList: List[Int] = mapData.keys.toList.sortWith(_ < _)
+  // Get seasons only in ascending order
+  private val seasonList: List[Int] = mapData.keys.toList.sorted
+
+  // Private sum list lambda function
+  private val sumFunction: (BigDecimal, BigDecimal) => BigDecimal = (x: BigDecimal, y: BigDecimal) => x + y
 
   // Start the application by entering the menu loop
   menuLoop()
@@ -36,8 +44,9 @@ object ConsoleApp extends App {
   // MENU HANDLING FUNCTIONS
   // *******************************************************************************************************************
 
-
   private def menuLoop(): Unit = {
+
+    // Tail rec loop to keep the application running
     @tailrec
     def loop(): Unit = {
       val input = displayMenuAndReadOption()
@@ -58,10 +67,11 @@ object ConsoleApp extends App {
   private def displayMenuAndReadOption(): String = {
     println(
       """|Please select one of the following:
-         |  1 - Display winner and stats from each season
-         |  2 - Display total number of wins per season
-         |  3 - Display average points per season
-         |  4 - Display total points per season
+         |  1 - Display winners and stats from each season
+         |  2 - Display a specific season's stats
+         |  3 - Display total wins per season
+         |  4 - Display average points per season1
+         |  5 - Display total points per season ascending
          |  5 - Display a drivers stats
          |  6 - Quit""".stripMargin)
     val input = readLine()
@@ -90,19 +100,34 @@ object ConsoleApp extends App {
   }
 
   private def handleDisplaySelection(): Boolean = {
-    println("Option 3 selected...")
+    println("Option 2 selected...")
     displaySelectedSeason(getSelectedSeason, mapData)
     true
   }
 
   private def handleDisplayWins(): Boolean = {
-    println("Option 2 selected...")
+    println("Option 3 selected...")
     displayWins(getTotalWins, mapData)
     true
   }
 
+  private def handleDisplayAvg(): Boolean = {
+    println("Option 4 selected...")
+    displayAverageWins(getAvgWins, mapData)
+    true
+  }
+
+  private def handleDisplayPointsAscending(): Boolean = {
+    println("Option 5 selected...")
+    displayPointsAscending(getPointsAscending, mapData)
+    true
+  }
+
+
+
   // Handles the action for quitting the application
   private def handleQuit(): Boolean = {
+    println("Option 7 selected...")
     println("Quitting the application...")
     false // Return false to exit the application loop
   }
@@ -132,11 +157,11 @@ object ConsoleApp extends App {
 
 
   // Frontend higher-order function to display selected season
-  private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+  private def displaySelectedSeason(getSelectedSeason:(Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Enter the season you want to display:")
     val selectedSeason = readLine()
     handleSeasonInput(selectedSeason) match {
-      case Right(option) =>
+      case Right(_) =>
         val seasonDrivers = getSelectedSeason(data, selectedSeason.toInt) // passes two arguments to getSelectedSeason (seen in signature in parameters)
         println(s"Season: $selectedSeason:")
         seasonDrivers.foreach { case (_, drivers) =>
@@ -150,6 +175,21 @@ object ConsoleApp extends App {
     }
   }
 
+  private def displayAverageWins(getAvgWins: Map[Int, List[(String, Float, Int)]]=> Map[Int, BigDecimal], data: Map[Int, List[(String, Float, Int)]]): Unit= {
+    val avgPoints = getAvgWins(data)
+    //Display results
+    avgPoints.foreach { case (season, average) =>
+
+      println(s"Season: $season: Average Points: $average")
+    }
+  }
+  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]]=> Seq[Any], data: Map[Int, List[(String, Float, Int)]]): Unit= {
+    val sumWins = getWinsAscending(data)
+    //Display results
+    sumWins.foreach { case (season, sum) =>
+      println(s"Season: $season: Total Points: $sum")
+    }
+  }
 
   // *******************************************************************************************************************
   // DATA OPERATION FUNCTIONS
@@ -175,14 +215,41 @@ object ConsoleApp extends App {
   // Backend function to get total wins
   private def getTotalWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Int] = {
     data.map { case (season, drivers) =>
-      val totalRaces = drivers.foldLeft(0) { (sum, accumulator) => sum + accumulator._3 }
+      val totalRaces = drivers.foldLeft(0) { (sum, driver) => sum + driver._3 }
       // Return mapped Map
       season -> totalRaces // seasons are keys, totalRaces are values
     }
 
   }
 
+  private def getAvgWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, BigDecimal] = {
 
+    @tailrec
+    def calculateAvg(drivers: List[(String, Float, Int)], total: Float, count: Int): BigDecimal = drivers match {
+      case Nil => if (count == 0) 0 // Handle empty list to avoid dividing by 0 error
+      else total / count
+      case (_, points, _) :: tail => calculateAvg(tail, total + points, count + 1)
+    }
+
+    def processEntries(entries: List[(Int, List[(String, Float, Int)])]): Map[Int, BigDecimal] = entries match {
+      case Nil => Map.empty
+      case (season, drivers) :: tail =>
+        val avgPoints = calculateAvg(drivers, 0, 0)
+        val roundedAverage = avgPoints.setScale(2, BigDecimal.RoundingMode.CEILING)
+        processEntries(tail) + (season -> roundedAverage)
+    }
+
+    processEntries(data.toList)
+  }
+
+  private def getPointsAscending(data: Map[Int, List[(String, Float, Int)]]): Seq[(Int, BigDecimal)] = {
+    val sumSeasons = data.map { case (season, drivers) =>
+      // Change fold right starting number to bigdecimal
+      val totalPoints: BigDecimal = drivers.foldRight(BigDecimal(0)) { (driver, sum) => sumFunction(driver._2, sum) }
+      season -> totalPoints
+    }.toSeq.sortBy(_._2) // Sort by total points (values)
+    sumSeasons // Convert back to map to match return sig
+  }
 
   // *******************************************************************************************************************
   // UTILITY FUNCTIONS
@@ -247,18 +314,7 @@ object ConsoleApp extends App {
   private def handleSeasonInput(input: String): Either[String, Int] =
     Try(input.toInt).toOption match {
       case Some(option) if seasonList.contains(option) => Right(option)
-      case _ => Left(s"Invalid input '$input'. Please enter a year between ${seasonList.head}-${lastInList(seasonList)}.")
+      case _ => Left(s"Invalid input '$input'. Please enter a year between ${seasonList.head}-${seasonList.last}.")
     }
-
-  // Tail recursive func to get last element in list
-  @tailrec
-  private def lastInList(ls:List[Int]): Int = ls match {
-    case h :: Nil => h
-    case _ :: tail => lastInList(tail)
-
-  }
-
-
-
 
 }
