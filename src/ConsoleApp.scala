@@ -30,13 +30,11 @@ object ConsoleApp extends App {
   )
 
   // Name related data and validation
-  private val nameList: List[String] = mapData.flatMap { // Flat map to condense drivers into one list (flattens inner list)
-    case (_, drivers) =>
-      drivers.collect {
-          case (name, _, _) => name
-        }
+  private val nameList: List[String] = mapData.flatMap { case (_, drivers) =>
+      drivers.collect { case (name, _, _) =>
+        name
+      }
   }.toList.distinct
-
 
   private val nameBuffer: String => String = x => {
     x.trim.indexOf(" ") match {
@@ -50,29 +48,28 @@ object ConsoleApp extends App {
   }
   private val namePredicate = (x: String, y: String) => x == y
   private val errName: String = s"Please enter a name in the following format 'First Last', for example: '${nameBuffer(nameList.head)}'."
-  private def validateName: String => Either[String, Either[Int,String]] = handleInput(nameList)(_: String)(errName)
+  private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName)
 
   // Dynamic menu options and validation
   private val expectedOptions: List[Int] = List.range(1, actionMap.keys.max + 1)
-  private val errMenu: String = s"Please enter a valid number from ${expectedOptions.head} to ${expectedOptions.last}."
-  private def validateMenuInput: String => Either[String, Either[Int,String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
+  private val errMenu: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
+  private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
   private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
-  private def validateSeason: String => Either[String, Either[Int,String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
+  private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
   // etc lambda functions
   private val sumFunction: (BigDecimal, BigDecimal) => BigDecimal = _ + _
 
   // Main application entry
   private def startApplication(): Unit = {
+    println()
     println("Welcome to the formula one application!")
     println()
     menuLoop()
   }
-
-  println(nameList)
 
   // Begin loop; last to be invoked to avoid forward referencing runtime errors
   startApplication()
@@ -192,7 +189,6 @@ object ConsoleApp extends App {
       println(s"Season $season: Total Wins: $totalWins")
     }
   }
-
 
   private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Enter the season you want to display:")
@@ -320,6 +316,19 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
   // UTILITY FUNCTIONS
   // *******************************************************************************************************************
+  // Curried Function to validate and process the input based on a list of expected values
+  // Dynamically prints error msg based on where it was called from
+
+  private def handleInput(validOptions: List[Any])(input: String)(contextMessage: String): Either[String, Either[Int, String]] =
+    Try(input.toInt).toOption match {
+      case Some(option) if validOptions.contains(option) =>
+        Right(Left(option)) // Return the valid integer input
+      // If parse fails
+      case None if validOptions.contains(input) =>
+        Right(Right(input)) // Return the valid string input
+      case _ =>
+        Left(s"Invalid input '$input'. $contextMessage") // Return an error message
+    }
 
   private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
     var mapData = Map[Int, List[(String, Float, Int)]]()
@@ -340,9 +349,12 @@ object ConsoleApp extends App {
             if (currentSeason != -1) {
               mapData += (currentSeason -> seasonData)
             }
+            // Update the current season
             currentSeason = season
 
+            // Reset the season data
             seasonData = List()
+
           }
           // Process each driver entry
           for (driverEntry <- allDrivers) {
@@ -366,18 +378,5 @@ object ConsoleApp extends App {
     }
     mapData
   }
-
-  // Curried Function to validate and process the input based on a list of expected values
-  // Dynamically prints error msg based on where it was called from
-  private def handleInput(validOptions: List[Any])(input: String)(contextMessage: String): Either[String, Either[Int, String]] =
-    Try(input.toInt).toOption match {
-      case Some(option) if validOptions.contains(option) =>
-        Right(Left(option)) // Return the valid integer input
-      // If parse fails
-      case None if validOptions.contains(input) =>
-        Right(Right(input)) // Return the valid string input
-      case _ =>
-        Left(s"Invalid input '$input'. $contextMessage") // Return an error message
-    }
 
 }
