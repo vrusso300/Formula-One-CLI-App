@@ -3,10 +3,11 @@ import scala.io.Source
 import scala.io.StdIn.readLine
 import scala.util.Using
 import scala.util.Try
+import scala.collection.immutable.ListMap
+
 
 // Singleton object
 object ConsoleApp extends App {
-
 
   // *******************************************************************************************************************
   // MAIN APPLICATION LOGIC & GLOBAL VARIABLES/FUNCTIONS
@@ -31,27 +32,30 @@ object ConsoleApp extends App {
 
   // Name related data and validation
   private val nameList: List[String] = mapData.flatMap { case (_, drivers) =>
-      drivers.collect { case (name, _, _) =>
-        name
-      }
-  }.toList.distinct
+    drivers.collect { case (name, _, _) =>
+      name
+    }
+  }.toList.distinct // Get unique names only
 
   private val nameBuffer: String => String = x => {
     x.trim.indexOf(" ") match {
-      case -1 => x.trim // If there's no space, return the trimmed input (single name)
       case spaceIndex =>
         val firstName = x.slice(0, spaceIndex)
         val lastName = x.slice(spaceIndex + 1, x.length)
         val fullName = firstName.capitalize + " " + lastName.capitalize
         fullName
+      case _ =>
+        x // Return the original string if no space is found
     }
   }
+
+  // Predicate to check if the name is in the list by comparing the names in a filter
   private val namePredicate = (x: String, y: String) => x == y
-  private val errName: String = s"Please enter a name in the following format 'First Last', for example: '${nameBuffer(nameList.head)}'."
+  private val errName: String = s"Please enter a name in the following format. For example: '${nameList.head}'."
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName)
 
   // Dynamic menu options and validation
-  private val expectedOptions: List[Int] = List.range(1, actionMap.keys.max + 1)
+  private val expectedOptions: List[Int] = List.range(1, actionMap.keys.size + 1)
   private val errMenu: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
 
@@ -60,14 +64,13 @@ object ConsoleApp extends App {
   private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
-  // etc lambda functions
-  private val sumFunction: (BigDecimal, BigDecimal) => BigDecimal = _ + _
+  // Etc lambda functions
+  private val sumFloatRound = (x: Float, y: Float) => (x + y).round
 
   // Main application entry
   private def startApplication(): Unit = {
     println()
     println("Welcome to the formula one application!")
-    println()
     menuLoop()
   }
 
@@ -184,14 +187,14 @@ object ConsoleApp extends App {
   // Frontend higher-order function to display total wins
   private def displayWins(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     val wins = getWins(data)
-    // Display the results
-    wins.foreach { case (season, totalWins) =>
-      println(s"Season $season: Total Wins: $totalWins")
-    }
+    // Display the results using a declarative approach
+    wins.map { case (season, totalWins) =>
+      s"Season $season: Total Wins: $totalWins"
+    }.foreach(println)
   }
 
   private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    println("Enter the season you want to display:")
+    println("Please enter the season you want to display:")
     val selectedSeason = readLine()
     validateSeason(selectedSeason) match {
       case Right(Left(option)) =>
@@ -207,16 +210,16 @@ object ConsoleApp extends App {
     }
   }
 
-  private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, BigDecimal], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    println("Enter the player you want to display:")
+  private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    println("Please enter the player you want to display in the format: 'First Last':")
     val userInput = readLine()
     val expectedInput = nameBuffer(userInput)
 
     (namePredicate(expectedInput, userInput), validateName(userInput)) match {
       case (true, Right(Right(option))) =>
-       getSelectedPoints(data, option).foreach { case (driver, points) =>
-         println(s"Driver: $driver Total Points: $points ")
-       }
+        getSelectedPoints(data, option).foreach { case (driver, points) =>
+          println(s"Driver: $driver Total Points: $points ")
+        }
       case (true, Left(error)) =>
         println(error)
 
@@ -225,7 +228,7 @@ object ConsoleApp extends App {
     }
   }
 
-  private def displayAverageWins(getAvgWins: Map[Int, List[(String, Float, Int)]] => Map[Int, BigDecimal], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+  private def displayAverageWins(getAvgWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     val avgPoints = getAvgWins(data)
     //Display results
     avgPoints.foreach { case (season, average) =>
@@ -233,7 +236,7 @@ object ConsoleApp extends App {
     }
   }
 
-  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Seq[Any], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     val sumWins = getWinsAscending(data)
     //Display results
     sumWins.foreach { case (season, sum) =>
@@ -272,62 +275,67 @@ object ConsoleApp extends App {
 
   }
 
-  private def getAvgWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, BigDecimal] = {
+  private def getAvgWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
 
     @tailrec
-    def calculateAvg(drivers: List[(String, Float, Int)], total: Float, count: Int): BigDecimal = drivers match {
+    def calculateAvg(drivers: List[(String, Float, Int)], total: Float, count: Int): Float = drivers match {
       case Nil => if (count == 0) 0 // Handle empty list to avoid dividing by 0 error
       else total / count
-      case (_, points, _) :: tail => calculateAvg(tail, total + points, count + 1)
+      case (_, points, _) :: tail => calculateAvg(tail, sumFloatRound(total, points), count + 1)
     }
 
-    def processEntries(data: List[(Int, List[(String, Float, Int)])]): Map[Int, BigDecimal] = data match {
-      case Nil => Map.empty
+    def processEntries(data: List[(Int, List[(String, Float, Int)])]): Map[Int, Float] = data match {
+      case Nil =>
+        Map.empty
       case (season, drivers) :: tail =>
         val avgPoints = calculateAvg(drivers, 0, 0)
-        val roundedAverage = avgPoints.setScale(1, BigDecimal.RoundingMode.CEILING)
+        val roundedAverage = avgPoints.round
         processEntries(tail) + (season -> roundedAverage)
     }
 
     processEntries(data.toList)
   }
 
-  private def getPointsAscending(data: Map[Int, List[(String, Float, Int)]]): Seq[(Int, BigDecimal)] = {
+  private def getPointsAscending(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
     val sumSeasons = data.map { case (season, drivers) =>
-      // Change fold right starting number to bigdecimal
-      val totalPoints: BigDecimal = drivers.foldRight(BigDecimal(0)) { (driver, sum) => sumFunction(driver._2, sum) }
+      val totalPoints: Float = drivers.foldRight(0f) { (driver, sum) => sumFloatRound(driver._2, sum) }
       season -> totalPoints
-    }.toSeq.sortBy(_._2) // Sort by total points (values)
-    sumSeasons
+    }
+
+    // Sort by total points and retain the sorted order in a list map
+    ListMap(sumSeasons.toSeq.sortBy(_._2): _*)
+
   }
 
-  private def getSelectedPoints(data: Map[Int, List[(String, Float, Int)]], inputName: String): Map[String, BigDecimal] = {
+  private def getSelectedPoints(data: Map[Int, List[(String, Float, Int)]], inputName: String): Map[String, Float] = {
     val fullName = inputName
     val sumPoints = data.collect { case (_, drivers) =>
+      // Filter selected driver based
       drivers.filter { case (name, _, _) => namePredicate(name, fullName) }
         // Sum selected driver
         .map { case (_, points, _) => points }.sum
     }.sum // Sum all seasons
 
-    Map(fullName -> BigDecimal(sumPoints))
+    Map(fullName -> sumPoints)
 
   }
 
   // *******************************************************************************************************************
   // UTILITY FUNCTIONS
   // *******************************************************************************************************************
+
   // Curried Function to validate and process the input based on a list of expected values
   // Dynamically prints error msg based on where it was called from
-
   private def handleInput(validOptions: List[Any])(input: String)(contextMessage: String): Either[String, Either[Int, String]] =
     Try(input.toInt).toOption match {
       case Some(option) if validOptions.contains(option) =>
         Right(Left(option)) // Return the valid integer input
-      // If parse fails
+      // If parse fails (i.e., is a name and cant be an integer), check if the name is in the list
       case None if validOptions.contains(input) =>
         Right(Right(input)) // Return the valid string input
       case _ =>
         Left(s"Invalid input '$input'. $contextMessage") // Return an error message
+
     }
 
   private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
