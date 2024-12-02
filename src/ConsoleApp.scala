@@ -51,17 +51,17 @@ object ConsoleApp extends App {
 
   // Predicate to check if the name is in the list by comparing the names in a filter
   private val namePredicate = (x: String, y: String) => x == y
-  private val errName: String = s"Please enter a valid name from the list: ${nameList.mkString(", ")}."
+  private val errName: String = s"The name wasn't found. Please enter a valid name from the list: ${nameList.mkString(", ")}."
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName) // Curried function
 
   // Dynamic menu options and validation
   private val expectedOptions: List[Int] = List.range(1, actionMap.keys.size + 1)
-  private val errMenu: String = s"Err: Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
+  private val errMenu: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
-  private val errSeason: String = s"Err: Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
+  private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
   // Etc lambda functions
