@@ -31,7 +31,7 @@ object ConsoleApp extends App {
   )
 
   // Name related data and validation
-  private val nameList: List[String] = mapData.flatMap { case (_, drivers) =>
+  private val nameList: List[String] = mapData.flatMap { case (_, drivers) => // Flatten the map to get the values
     drivers.collect { case (name, _, _) =>
       name
     }
@@ -51,17 +51,17 @@ object ConsoleApp extends App {
 
   // Predicate to check if the name is in the list by comparing the names in a filter
   private val namePredicate = (x: String, y: String) => x == y
-  private val errName: String = s"Please enter a name in the following format. For example: '${nameList.head}'."
-  private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName)
+  private val errName: String = s"Please enter a valid name from the list: ${nameList.mkString(", ")}."
+  private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName) // Curried function
 
   // Dynamic menu options and validation
   private val expectedOptions: List[Int] = List.range(1, actionMap.keys.size + 1)
-  private val errMenu: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
+  private val errMenu: String = s"Err: Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
-  private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
+  private val errSeason: String = s"Err: Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
   // Etc lambda functions
@@ -74,7 +74,8 @@ object ConsoleApp extends App {
     menuLoop()
   }
 
-  // Begin loop; last to be invoked to avoid forward referencing runtime errors
+
+  // Begin loop; last to be invoked to avoid forward referencing compilation errors
   startApplication()
 
   // *******************************************************************************************************************
@@ -222,9 +223,8 @@ object ConsoleApp extends App {
         }
       case (true, Left(error)) =>
         println(error)
-
-      case (false, Left(error)) =>
-        println(error)
+      case (false, _) =>
+        println(s"Invalid input '$userInput'. Please enter a name in the format: ${nameList.head}")
     }
   }
 
@@ -302,7 +302,7 @@ object ConsoleApp extends App {
       season -> totalPoints
     }
 
-    // Sort by total points and retain the sorted order in a list map
+    // Sort by total points and retain the sorted order in a list map to match return signature
     ListMap(sumSeasons.toSeq.sortBy(_._2): _*)
 
   }
