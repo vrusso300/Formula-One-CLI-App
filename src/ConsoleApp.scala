@@ -36,20 +36,19 @@ object ConsoleApp extends App {
       name
     }
   }.toList.distinct // Get unique names only
-
   private val nameBuffer: String => String = x => {
-    x.trim.indexOf(" ") match {
+    val trimmed = x.trim
+    trimmed.indexOf(" ") match {
+      case -1 =>
+        // Return original string if no space is found
+        trimmed.capitalize
       case spaceIndex =>
-        val firstName = x.slice(0, spaceIndex)
-        val lastName = x.slice(spaceIndex + 1, x.length)
-        val fullName = firstName.capitalize + " " + lastName.capitalize
-        fullName
-      case _ =>
-        x // Return the original string if no space is found
+        // Split into first and last name
+        val firstName = trimmed.slice(0, spaceIndex).capitalize
+        val lastName = trimmed.slice(spaceIndex + 1, trimmed.length).capitalize
+        firstName + " " + lastName
     }
   }
-
-  // Predicate to check if the name is in the list by comparing the names in a filter
   private val namePredicate = (x: String, y: String) => x == y
   private val errName: String = s"The name wasn't found. Please enter a valid name from the list: ${nameList.mkString(", ")}."
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName) // Curried function
@@ -73,7 +72,6 @@ object ConsoleApp extends App {
     println("Welcome to the formula one application!")
     menuLoop()
   }
-
 
   // Begin loop; last to be invoked to avoid forward referencing compilation errors
   startApplication()
@@ -174,6 +172,8 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
   // USER INTERACTION FUNCTIONS (FRONTEND)
   // *******************************************************************************************************************
+
+
 
   // Frontend higher-order function to display all winners
   private def displayWinners(getStats: Map[Int, List[(String, Float, Int)]] => Map[Int, (String, Float, Int)], data: Map[Int, List[(String, Float, Int)]]): Unit = {
@@ -301,7 +301,6 @@ object ConsoleApp extends App {
       val totalPoints: Float = drivers.foldRight(0f) { (driver, sum) => sumFloatRound(driver._2, sum) }
       season -> totalPoints
     }
-
     // Sort by total points and retain the sorted order in a list map to match return signature
     ListMap(sumSeasons.toSeq.sortBy(_._2): _*)
 
@@ -321,7 +320,7 @@ object ConsoleApp extends App {
   }
 
   // *******************************************************************************************************************
-  // UTILITY FUNCTIONS
+  // VALIDATION & FILE HANDLING FUNCTIONS
   // *******************************************************************************************************************
 
   // Curried Function to validate and process the input based on a list of expected values
@@ -339,52 +338,35 @@ object ConsoleApp extends App {
     }
 
   private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
-    var mapData = Map[Int, List[(String, Float, Int)]]()
-
     try {
       // Safely manage file reading
       Using(Source.fromFile(fileName)) { bufferedSource =>
-        var seasonData = List[(String, Float, Int)]()
-        var currentSeason = -1
+        // Use foldLeft to accumulate the result in an immutable map
+        bufferedSource.getLines().foldLeft(Map[Int, List[(String, Float, Int)]]()) {
+          case (mapData, line) =>
+            val splitLine = line.split(",", 2).map(_.trim)
+            val season = splitLine(0).toInt
+            val allDrivers = splitLine(1).split(",").map(_.trim)
 
-        for (line <- bufferedSource.getLines()) {
-          val splitLine = line.split(",", 2).map(_.trim) // Split line into season and drivers
-          val season = splitLine(0).toInt
-          val allDrivers = splitLine(1).split(",").map(_.trim) // Split all drivers into individual entries
+            // Process each driver entry and create a list of tuples
+            val seasonData = allDrivers.map { driverEntry =>
+              val driverDetails = driverEntry.split(":").map(_.trim)
+              val name = driverDetails(0)
+              val stats = driverDetails(1).split(" ").map(_.trim)
+              val points = stats(0).toFloat
+              val wins = stats(1).toInt
+              (name, points, wins)
+            }.toList
 
-          if (season != currentSeason) {
-            // Save the previous season data and reset
-            if (currentSeason != -1) {
-              mapData += (currentSeason -> seasonData)
-            }
-            // Update the current season
-            currentSeason = season
-
-            // Reset the season data
-            seasonData = List()
-
-          }
-          // Process each driver entry
-          for (driverEntry <- allDrivers) {
-            val driverDetails = driverEntry.split(":").map(_.trim)
-            val name = driverDetails(0)
-            val stats = driverDetails(1).split(" ").map(_.trim)
-            val points = stats(0).toFloat
-            val wins = stats(1).toInt
-            seasonData = seasonData :+ (name, points, wins)
-          }
+            // Update the map with the new season's data, merging it with any existing data for the season
+            mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
         }
-
-        // Save the last season's data
-        if (currentSeason != -1) {
-          mapData += (currentSeason -> seasonData)
-        }
-      }
+      }.getOrElse(Map.empty) // Return an empty map if an exception occurs
     } catch {
       case e: Exception =>
         println(s"Error reading file: ${e.getMessage}")
+        sys.exit(1)
     }
-    mapData
   }
 
 }
