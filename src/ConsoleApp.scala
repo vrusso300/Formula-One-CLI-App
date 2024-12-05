@@ -44,19 +44,16 @@ object ConsoleApp extends App {
   }.mkString(" ")
   private val namePredicate = (x: String, y: String) => x == y
   private val errName: String = s"The name wasn't found. Please enter a valid name from the list: ${nameList.mkString(", ")}."
-
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_: String)(errName) // Curried function
 
   // Dynamic menu options and validation
   private val expectedOptions: List[Int] = List.range(1, actionMap.keys.size + 1)
   private val errMenu: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}."
-
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_: String)(errMenu) // Curried function
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
   private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
-
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
   // Etc lambda functions
@@ -64,8 +61,7 @@ object ConsoleApp extends App {
 
   // Main application entry
   private def startApplication(): Unit = {
-    println()
-    println("Welcome to the formula one application!")
+    println("\nWelcome to the formula one application!")
     menuLoop()
   }
 
@@ -165,7 +161,6 @@ object ConsoleApp extends App {
     false // Return false to exit the application loop
   }
 
-
   // *******************************************************************************************************************
   // USER INTERACTION FUNCTIONS (FRONTEND)
   // *******************************************************************************************************************
@@ -258,12 +253,7 @@ object ConsoleApp extends App {
     val seasonStats = data.filter { case (season, _) =>
       season == selectedSeason
     }
-
-    // Check if the season was found
-    val seasonFound = seasonStats.size == 1
-    val result = if (seasonFound) Some(seasonStats) else None
-    result.getOrElse(throw new RuntimeException("Error: Season not found."))
-
+    seasonStats
   }
 
   // Backend function to get total wins
@@ -342,11 +332,16 @@ object ConsoleApp extends App {
     }
 
   private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
-    try {
-      // Safely manage file reading
-      Using(Source.fromFile(fileName)) { bufferedSource =>
+
+    // Safely manage file reading
+    Try(Using(Source.fromFile(fileName)) { bufferedSource =>
+      val lines = bufferedSource.getLines().toList
+      if (lines.isEmpty) {
+        println("The data file is empty.")
+        sys.exit(1)
+      } else {
         // Use foldLeft to accumulate the result in an immutable map
-        bufferedSource.getLines().foldLeft(Map[Int, List[(String, Float, Int)]]()) {
+        lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
           case (mapData, line: String) =>
             val splitLine = line.split(",", 2).map(_.trim)
             val season = splitLine(0).toInt
@@ -365,10 +360,12 @@ object ConsoleApp extends App {
             // Update the map with the new season's data, merging it with any existing data for the season
             mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
         }
-      }.get // Return the map
-    } catch {
-      case e: Exception =>
-        println(s"Error reading file: ${e.getMessage}")
+      }
+    })
+    match {
+      case scala.util.Success(data) => data.get
+      case scala.util.Failure(exception) =>
+        println(s"Error reading file: ${exception.getMessage}")
         sys.exit(1)
     }
   }
