@@ -1,9 +1,8 @@
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.io.StdIn.readLine
-import scala.util.Using
-import scala.util.Try
 import scala.collection.immutable.ListMap
+import scala.util.{Using, Try, Success, Failure}
 
 
 // Singleton object
@@ -17,7 +16,12 @@ object ConsoleApp extends App {
   private val dataFilePath = "./src/resources/data.txt"
 
   // Read data from file
-  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile(dataFilePath)
+  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile(dataFilePath) match {
+    case Right(data) => data
+    case Left(error) =>
+      println(s"Error reading data file: $error")
+      Map.empty
+  }
 
   // Define new menu options as a map of actions
   private val actionMap: Map[Int, () => Boolean] = Map(
@@ -308,9 +312,7 @@ object ConsoleApp extends App {
         // Sum selected driver
         .map { case (_, points, _) => points }.sum
     }.sum // Sum all seasons
-
     Map(fullName -> sumPoints)
-
   }
 
   // *******************************************************************************************************************
@@ -318,7 +320,6 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
 
   // Curried Function to validate and process the input based on a list of expected values
-  // Dynamically prints error msg based on where it was called from
   private def handleInput(validOptions: List[Any])(input: String)(contextMessage: String): Either[String, Either[Int, String]] =
     Try(input.toInt).toOption match {
       case Some(option) if validOptions.contains(option) =>
@@ -328,20 +329,19 @@ object ConsoleApp extends App {
         Right(Right(input)) // Return the valid string input
       case _ =>
         Left(s"Invalid input '$input'. $contextMessage") // Return an error message
-
     }
 
-  private def readFile(fileName: String): Map[Int, List[(String, Float, Int)]] = {
-
+  private def readFile(fileName: String): Either[String, Map[Int, List[(String, Float, Int)]]] = {
     // Safely manage file reading
     Try(Using(Source.fromFile(fileName)) { bufferedSource =>
       val lines = bufferedSource.getLines().toList
+
       if (lines.isEmpty) {
-        println("The data file is empty.")
-        sys.exit(1)
+        Left("The data file is empty.")
       } else {
+
         // Use foldLeft to accumulate the result in an immutable map
-        lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
+        val data = lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
           case (mapData, line: String) =>
             val splitLine = line.split(",", 2).map(_.trim)
             val season = splitLine(0).toInt
@@ -357,17 +357,15 @@ object ConsoleApp extends App {
               (name, points, wins)
             }.toList
 
-            // Update the map with the new season's data, merging it with any existing data for the season
+            // Update the map with the new season data, appending to the existing list
             mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
         }
+        Right(data)
       }
-    })
-    match {
-      case scala.util.Success(data) => data.get
-      case scala.util.Failure(exception) =>
-        println(s"Error reading file: ${exception.getMessage}")
-        sys.exit(1)
+    }) match {
+      case Success(data) => data.get
+      case Failure(exception) =>
+        Left(exception.getMessage)
     }
   }
-
 }
