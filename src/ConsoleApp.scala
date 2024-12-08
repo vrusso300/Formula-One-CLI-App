@@ -65,7 +65,6 @@ object ConsoleApp extends App {
 
   // Main application entry
   private def startApplication(): Unit = {
-
     println("\nWelcome to the formula one application!")
     menuLoop()
   }
