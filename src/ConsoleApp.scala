@@ -20,7 +20,7 @@ object ConsoleApp extends App {
     case Right(data) => data
     case Left(error) =>
       println(s"Error reading data file: $error")
-      Map.empty
+      sys.exit(1)
   }
 
   // Define new menu options as a map of actions
@@ -65,6 +65,7 @@ object ConsoleApp extends App {
 
   // Main application entry
   private def startApplication(): Unit = {
+
     println("\nWelcome to the formula one application!")
     menuLoop()
   }
@@ -331,41 +332,41 @@ object ConsoleApp extends App {
         Left(s"Invalid input '$input'. $contextMessage") // Return an error message
     }
 
+
   private def readFile(fileName: String): Either[String, Map[Int, List[(String, Float, Int)]]] = {
     // Safely manage file reading
-    Try(Using(Source.fromFile(fileName)) { bufferedSource =>
+    Using(Source.fromFile(fileName)) { bufferedSource =>
       val lines = bufferedSource.getLines().toList
 
-      if (lines.isEmpty) {
-        Left("The data file is empty.")
-      } else {
+      // If lines is empty, return a Left with an error message
+      val data = lines.headOption match {
+        case None => return Left("File is empty")
+        case Some(_) =>
+          // Use foldLeft to accumulate the result in an immutable map
+          lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
+            case (mapData, line: String) =>
+              val splitLine = line.split(",", 2).map(_.trim)
+              val season = splitLine(0).toInt
+              val allDrivers = splitLine(1).split(",").map(_.trim)
 
-        // Use foldLeft to accumulate the result in an immutable map
-        val data = lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
-          case (mapData, line: String) =>
-            val splitLine = line.split(",", 2).map(_.trim)
-            val season = splitLine(0).toInt
-            val allDrivers = splitLine(1).split(",").map(_.trim)
+              // Process each driver entry and create a list of tuples
+              val seasonData = allDrivers.map { driverEntry =>
+                val driverDetails = driverEntry.split(":").map(_.trim)
+                val name = driverDetails(0)
+                val stats = driverDetails(1).split(" ").map(_.trim)
+                val points = stats(0).toFloat
+                val wins = stats(1).toInt
+                (name, points, wins)
+              }.toList
 
-            // Process each driver entry and create a list of tuples
-            val seasonData = allDrivers.map { driverEntry =>
-              val driverDetails = driverEntry.split(":").map(_.trim)
-              val name = driverDetails(0)
-              val stats = driverDetails(1).split(" ").map(_.trim)
-              val points = stats(0).toFloat
-              val wins = stats(1).toInt
-              (name, points, wins)
-            }.toList
-
-            // Update the map with the new season data, appending to the existing list
-            mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
-        }
-        Right(data)
+              // Update the map with the new season data, appending to the existing list
+              mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
+          }
       }
-    }) match {
-      case Success(data) => data.get
-      case Failure(exception) =>
-        Left(exception.getMessage)
+      Right(data)
+    } match {
+      case Success(data) => data
+      case Failure(exception) => Left(exception.getMessage)
     }
   }
 }
