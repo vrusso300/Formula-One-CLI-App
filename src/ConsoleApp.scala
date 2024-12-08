@@ -338,7 +338,6 @@ object ConsoleApp extends App {
     Using(Source.fromFile(fileName)) { bufferedSource =>
       val lines = bufferedSource.getLines().toList
 
-      // If lines is empty, return a Left with an error message
       val data = lines.headOption match {
         case None => return Left("File is empty")
         case Some(_) =>
@@ -365,7 +364,7 @@ object ConsoleApp extends App {
       }
       Right(data)
     } match {
-      case Success(data) => data
+      case Success(data) => println("Data loaded successfully"); data
       case Failure(exception) => Left(exception.getMessage)
     }
   }
