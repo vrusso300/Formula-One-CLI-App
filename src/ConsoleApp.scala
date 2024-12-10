@@ -67,7 +67,7 @@ object ConsoleApp extends App {
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
-  private val errSeason: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}. For example, type 1 to view winners."
+  private val errSeason: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}. "
 
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
