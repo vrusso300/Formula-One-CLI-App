@@ -285,7 +285,7 @@ object ConsoleApp extends App {
 
     val result: Map[Int, Float] = data.map { case (season, drivers) =>
       val avgPoints = calculateAvg(drivers, 0, 0)
-      val roundedAverage = avgPoints.round
+      val roundedAverage = BigDecimal(avgPoints).setScale(2, BigDecimal.RoundingMode.HALF_UP).toFloat
       season -> roundedAverage
     }
     result
