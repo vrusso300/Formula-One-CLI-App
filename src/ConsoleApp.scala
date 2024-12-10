@@ -233,7 +233,7 @@ object ConsoleApp extends App {
   // Frontend higher-order function to display selected driver's total points
   private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     // Get the user input
-    println("Please enter the player you want to display (case sensitive):")
+    println("Please enter the player you want to display:")
     // Convert the name to a standard format
     val userInput = nameBuffer(readLine())
     validateName(userInput) match {
