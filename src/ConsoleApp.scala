@@ -57,7 +57,7 @@ object ConsoleApp extends App {
 
   // Season related data and validation
   private val seasonList: List[Int] = mapData.keys.toList.sorted
-  private val errSeason: String = s"Please enter a valid year between ${seasonList.head} and ${seasonList.last}."
+  private val errSeason: String = s"Please enter a valid number between ${expectedOptions.head} and ${expectedOptions.last}. For example, type 1 to view winners."
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_: String)(errSeason) // Curried function
 
   // Etc lambda functions
@@ -142,7 +142,7 @@ object ConsoleApp extends App {
 
   private def handleDisplayAvg(): Boolean = {
     println("Option 4 selected...")
-    displayAverageWins(getAvgWins, mapData)
+    displayAvgPoints(getAvgPoints, mapData)
     true
   }
 
@@ -202,8 +202,11 @@ object ConsoleApp extends App {
         }
       case Left(error) =>
         println(error)
+
+
     }
   }
+
 
   private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Please enter the player you want to display (case sensitive):")
@@ -222,8 +225,8 @@ object ConsoleApp extends App {
     }
   }
 
-  private def displayAverageWins(getAvgWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val avgPoints = getAvgWins(data)
+  private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    val avgPoints = getAvgPoints(data)
     //Display results
     avgPoints.foreach { case (season, average) =>
       println(s"Season: $season: Average Points: $average")
@@ -242,7 +245,7 @@ object ConsoleApp extends App {
   // DATA OPERATION FUNCTIONS (BACKEND)
   // *******************************************************************************************************************
 
-  // Backend functionthat extracts and processes the data
+  // Backend function that extracts and processes the data
   private def getDriverStats(data: Map[Int, List[(String, Float, Int)]]): Map[Int, (String, Float, Int)] = {
     val driverStats = data.map { case (season, drivers) =>
       val bestDriver = drivers.maxBy(_._2)
@@ -272,7 +275,7 @@ object ConsoleApp extends App {
 
   }
 
-  private def getAvgWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
+  private def getAvgPoints(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
 
     @tailrec
     def calculateAvg(drivers: List[(String, Float, Int)], total: Float, count: Int): Float = drivers match {
@@ -285,9 +288,7 @@ object ConsoleApp extends App {
       val roundedAverage = avgPoints.round
       season -> roundedAverage
     }
-
     result
-
   }
 
   private def getPointsAscending(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
