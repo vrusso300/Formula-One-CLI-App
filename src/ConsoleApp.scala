@@ -245,7 +245,7 @@ object ConsoleApp extends App {
     println("Please enter the player you want to display:")
 
     // Standardise the input
-    val userInput = readLine().split("\\s+").mkString(" ")
+    val userInput = readLine().split("\\s+").mkString(" ").trim
 
     // Validate the name§
     validateName(userInput) match {
