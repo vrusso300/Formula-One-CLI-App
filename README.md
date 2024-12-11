@@ -2,27 +2,11 @@
 
 This is a Scala-based console application designed to provide various statistics and insights about Formula One seasons and drivers. The application processes data from a text file and allows users to display different statistics based on their input. Evaluation and Testing are located in the `documents` folder.
 
-## Features
-
-- View the winners and stats for each season
-- Display detailed stats for a specific season
-- Show the total races for each season
-- Calculate and display average points per season
-- List total points per season in ascending order
-- Display the total points for a specific driver
-- Exit the application
-
 ## Prerequisites
 
 - Scala 2.13 or newer
 - Open JDK 23.0.1 or newer
-- IntelliJ IDEA 2024.3.1 (or any other compatible IDE)
-
-
-## Project Structure
-
-- `ConsoleApp.scala`: Main application file containing logic to read data, process user input, and display statistics.
-- `data.txt`: Text file that contains the Formula One statistics.
+- IntelliJ IDEA 2024.3.1 or newer (or any other compatible IDE)
 
 ## Getting Started
 
@@ -39,6 +23,21 @@ This is a Scala-based console application designed to provide various statistics
 4. Run the `ConsoleApp.scala` file.
 
 5. Follow the on-screen prompts to interact with the application.
+
+## Features
+
+- View the winners and stats for each season
+- Display detailed stats for a specific season
+- Show the total races for each season
+- Calculate and display average points per season
+- List total points per season in ascending order
+- Display the total points for a specific driver
+- Exit the application
+
+## Project Structure
+
+- `ConsoleApp.scala`: Main application file containing logic to read data, process user input, and display statistics.
+- `data.txt`: Text file that contains the Formula One statistics.
 
 ## Data File Format
 
