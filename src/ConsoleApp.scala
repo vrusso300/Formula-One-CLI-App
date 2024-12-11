@@ -55,7 +55,9 @@ object ConsoleApp extends App {
 
   // partially applied curried functions to validate the user input based on the expected options
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_)(errName)
+
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_)(errSeason)
+
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_)(errMenu)
 
   // Main application entry
@@ -227,6 +229,15 @@ object ConsoleApp extends App {
     }
   }
 
+  // Frontend higher-order function to display total points in ascending order
+  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    val sumWins = getWinsAscending(data)
+    //Display results
+    sumWins.foreach { case (season, sum) =>
+      println(s"Season: $season: Total Points: $sum")
+    }
+  }
+
   // Frontend function to display selected driver's total points
   private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
 
@@ -251,16 +262,6 @@ object ConsoleApp extends App {
       case Left(error) => println(error)
       // If validation fails unexpectedly
       case _ => println(s"Invalid input '$userInput'. Please enter a valid name.")
-    }
-  }
-
-
-  // Frontend higher-order function to display total points in ascending order
-  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val sumWins = getWinsAscending(data)
-    //Display results
-    sumWins.foreach { case (season, sum) =>
-      println(s"Season: $season: Total Points: $sum")
     }
   }
 
