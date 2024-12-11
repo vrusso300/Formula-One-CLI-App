@@ -127,35 +127,35 @@ object ConsoleApp extends App {
   // Handles the action for displaying winners
   private def handleDisplayWinners(): Boolean = {
     println("Option 1 selected...")
-    displayWinners(getDriverStats, mapData)
+    displayWinners(getDriverStats)
     true
   }
 
   // Handles the action for displaying a specific season's stats
   private def handleDisplaySelection(): Boolean = {
     println("Option 2 selected...")
-    displaySelectedSeason(getSelectedSeason, mapData)
+    displaySelectedSeason(getSelectedSeason)
     true
   }
 
   // Handles the action for displaying total races
   private def handleDisplayRaces(): Boolean = {
     println("Option 3 selected...")
-    displayRaces(getTotalRaces, mapData)
+    displayRaces(getTotalRaces)
     true
   }
 
   // Handles the action for displaying average points
   private def handleDisplayAvg(): Boolean = {
     println("Option 4 selected...")
-    displayAvgPoints(getAvgPoints, mapData)
+    displayAvgPoints(getAvgPoints)
     true
   }
 
   // Handles the action for displaying total points in ascending order
   private def handleDisplayPointsAscending(): Boolean = {
     println("Option 5 selected...")
-    displayPointsAscending(getPointsAscending, mapData)
+    displayPointsAscending(getPointsAscending)
     true
   }
 
@@ -163,7 +163,7 @@ object ConsoleApp extends App {
   // Handles the action for displaying a specific driver's total points
   private def handleDisplaySelected(): Boolean = {
     println("Option 6 selected...")
-    displaySelectedPoints(getSelectedPoints, mapData)
+    displaySelectedPoints(getSelectedPoints)
     true
   }
 
@@ -179,9 +179,9 @@ object ConsoleApp extends App {
   // *******************************************************************************************************************
 
   // Frontend higher-order function to display all winners
-  private def displayWinners(getStats: Map[Int, List[(String, Float, Int)]] => Map[Int, (String, Float, Int)], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+  private def displayWinners(getStats: Map[Int, List[(String, Float, Int)]] => Map[Int, (String, Float, Int)]): Unit = {
     // Invoke the backend function to get the processed data
-    val stats = getStats(data)
+    val stats = getStats(mapData)
     // Display the results (driver name, points, wins, for each season)
     stats.foreach { case (season, (driver, points, wins)) =>
       println(s"Season $season: Winner: $driver, Points: $points, Wins: $wins")
@@ -189,7 +189,7 @@ object ConsoleApp extends App {
   }
 
   // Frontend higher-order function to display a specific season's stats
-  private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+  private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Please enter the season you want to display:")
     // Get the user input
     val selectedSeason = readLine()
@@ -197,7 +197,7 @@ object ConsoleApp extends App {
     validateSeason(selectedSeason) match {
       case Right(Left(option)) =>
         // Use the backend function to get the selected season data
-        val seasonDrivers = getSelectedSeason(data, option)
+        val seasonDrivers = getSelectedSeason(mapData, option)
         println(s"Season: $selectedSeason:")
         seasonDrivers.foreach { case (_, drivers) =>
           drivers.foreach { case (driver, points, wins) =>
@@ -207,13 +207,12 @@ object ConsoleApp extends App {
       // Display the error message if the input is invalid
       case Left(error) =>
         println(error)
-
     }
   }
 
   // Frontend higher-order function to display total races
-  private def displayRaces(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val wins = getWins(data)
+  private def displayRaces(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int]): Unit = {
+    val wins = getWins(mapData)
     // Display the results using a declarative approach
     wins.map { case (season, totalRaces) =>
       s"Season $season: Total Races: $totalRaces"
@@ -221,8 +220,8 @@ object ConsoleApp extends App {
   }
 
   // Frontend higher-order function to display average points
-  private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val avgPoints = getAvgPoints(data)
+  private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float]): Unit = {
+    val avgPoints = getAvgPoints(mapData)
     //Display results
     avgPoints.foreach { case (season, average) =>
       println(f"Season: $season: Average Points: $average%.2f")
@@ -230,8 +229,8 @@ object ConsoleApp extends App {
   }
 
   // Frontend higher-order function to display total points in ascending order
-  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val sumWins = getWinsAscending(data)
+  private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float]): Unit = {
+    val sumWins = getWinsAscending(mapData)
     //Display results
     sumWins.foreach { case (season, sum) =>
       println(s"Season: $season: Total Points: $sum")
@@ -239,8 +238,7 @@ object ConsoleApp extends App {
   }
 
   // Frontend function to display selected driver's total points
-  private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-
+  private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float]): Unit = {
     // Get the user input
     println("Please enter the player you want to display:")
 
@@ -254,7 +252,7 @@ object ConsoleApp extends App {
         val actualName = nameList.find(_.equalsIgnoreCase(driver)).get
 
         // Display points for the selected driver
-        getSelectedPoints(data, driver).foreach { case (_, points) =>
+        getSelectedPoints(mapData, driver).foreach { case (_, points) =>
           println(s"Driver: $actualName \nTotal Points: $points")
         }
 
@@ -264,7 +262,6 @@ object ConsoleApp extends App {
       case _ => println(s"Invalid input '$userInput'. Please enter a valid name.")
     }
   }
-
   // *******************************************************************************************************************
   // DATA OPERATION FUNCTIONS (BACKEND)
   // *******************************************************************************************************************
