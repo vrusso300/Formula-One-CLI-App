@@ -2,6 +2,12 @@
 
 This is a Scala-based console application designed to provide various statistics and insights about Formula One seasons and drivers. The application processes data from a text file and allows users to display different statistics based on their input. Evaluation and Testing are located in the `documents` folder.
 
+## Prerequisites
+
+- Scala 2.13 or newer
+- Open JDK 23.0.1 or newer
+- IntelliJ IDEA 2024.3.1 (or any other compatible IDE)
+
 ## Getting Started
 
 1. Clone the repository:
@@ -28,18 +34,10 @@ This is a Scala-based console application designed to provide various statistics
 - Display the total points for a specific driver
 - Exit the application
 
-## Prerequisites
-
-- Scala 2.13 or newer
-- Open JDK 23.0.1 or newer
-- IntelliJ IDEA 2024.3.1 (or any other compatible IDE)
-
-
 ## Project Structure
 
 - `ConsoleApp.scala`: Main application file containing logic to read data, process user input, and display statistics.
 - `data.txt`: Text file that contains the Formula One statistics.
-
 
 ## Data File Format
 
