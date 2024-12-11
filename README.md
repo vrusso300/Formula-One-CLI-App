@@ -44,11 +44,11 @@ This is a Scala-based console application designed to provide various statistics
 
 The `data.txt` file should contain data in the following format:
 
-year, driver1: points wins, driver2: points wins
+year, driver1: points wins, driver2: points wins, etc...
 
 Example:
 
-2023, Max Verstappen: 575 19, Sergio Perez: 285 2
+2023, Max Verstappen: 575 19, Sergio Perez: 285 2, etc...
 
 ## Menu Options
 
