@@ -6,7 +6,7 @@ This is a Scala-based console application designed to provide various statistics
 
 - Scala 2.13 or newer
 - Open JDK 23.0.1 or newer
-- IntelliJ IDEA 2024.3.1 (or any other compatible IDE)
+- IntelliJ IDEA 2024.3.1 or newer (or any other compatible IDE)
 
 ## Getting Started
 
