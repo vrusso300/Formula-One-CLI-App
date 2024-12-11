@@ -1,4 +1,5 @@
 // Import libraries
+
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.io.StdIn.readLine
@@ -16,10 +17,12 @@ object ConsoleApp extends App {
   private val dataFilePath = "./src/resources/data.txt"
 
   // Read data from file via readFile utility function and store in map
-  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile(dataFilePath) match { // Pattern match success or failure
-    case Right(data) => data // Return the data if successful
-    case Left(error) => // Handle the error
+  private val mapData: Map[Int, List[(String, Float, Int)]] = readFile(dataFilePath) match {
+    // Pattern match success or failure
+    case Right(data) => data
+    case Left(error) =>
       println(s"Error reading data file: $error")
+      // Exit the application if the file reading fails
       sys.exit(1)
   }
 
@@ -33,21 +36,6 @@ object ConsoleApp extends App {
     6 -> handleDisplaySelected,
     7 -> handleQuit
   )
-
-  // Name buffer to standardise user input for option 6
-  private val nameBuffer: String => String = input => {
-    // Split the input into words and capitalise the first letter of each word
-    val words = input.trim.split("\\s+")
-    words.zipWithIndex.map { case (word, idx) =>
-      // Handles middle names; only capitalise if the word is not all uppercase
-      val isMiddleName = idx > 0 && idx < words.length - 1
-      if (isMiddleName && word.forall(_.isLower)) word
-      else if (word.headOption.exists(_.isUpper) && word.tail.forall(_.isLower)) word
-      // Capitalise the first letter of the word
-      else word.capitalize
-    }.mkString(" ") // Join the words back together via a space
-  }
-  private val namePredicate = (x: String, y: String) => x.equalsIgnoreCase(y) // Predicate to check if the name is equal; ignore case of input
 
   // Name related data and validation
   private val nameList: List[String] = mapData.flatMap { case (_, drivers) => // Flatten the map to get the values
@@ -65,7 +53,7 @@ object ConsoleApp extends App {
   private val seasonList: List[Int] = mapData.keys.toList.sorted
   private val errSeason: String = s"Please enter a valid number between ${seasonList.head} and ${seasonList.last}. "
 
-  // partially applied curried functions to validate the user input
+  // partially applied curried functions to validate the user input based on the expected options
   private def validateName: String => Either[String, Either[Int, String]] = handleInput(nameList)(_)(errName)
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_)(errSeason)
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_)(errMenu)
@@ -92,11 +80,13 @@ object ConsoleApp extends App {
     def loop(): Unit = {
       // Display the menu and read the user input
       val input = displayMenuAndReadOption()
-      // Validate the user input
-      validateMenuInput(input) match { // Pattern match the validation result, returns as int if valid
+      // Pattern match the validation result, returns as int if valid
+      validateMenuInput(input) match {
         case Right(Left(option)) =>
-          if (processMenuOption(option)) loop() // If the input is valid, process the menu option and loop
-        case Left(error) => // If invalid, display the error message and loop for another input
+          // If the input is valid, process the menu option and loop
+          if (processMenuOption(option)) loop()
+        // If invalid, display the error message and loop for another input
+        case Left(error) =>
           println(error)
           loop()
       }
@@ -123,7 +113,8 @@ object ConsoleApp extends App {
   // Processes the menu option selected by the user
   private def processMenuOption(option: Int): Boolean = {
     actionMap.get(option) match {
-      case Some(action) => action() // Invoke the corresponding action
+      // Invoke the corresponding action
+      case Some(action) => action()
       case None =>
         println("Invalid option. Please try again.")
         true
@@ -230,22 +221,30 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display selected driver's total points
+  // Frontend function to display selected driver's total points
   private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+
     // Get the user input
     println("Please enter the player you want to display:")
-    // Convert the name to a standard format
-    val userInput = nameBuffer(readLine())
+
+    // Standardise the input
+    val userInput = readLine().split("\\s+").mkString(" ")
+
+    // Validate the name§
     validateName(userInput) match {
-      case Right(Right(option)) =>
-        getSelectedPoints(data, option).foreach { case (driver, points) =>
-          println(s"Driver: $driver \nTotal Points: $points ")
+      case Right(Right(driver)) =>
+        // Find the actual name
+        val actualName = nameList.find(_.equalsIgnoreCase(driver)).get
+
+        // Display points for the selected driver
+        getSelectedPoints(data, driver).foreach { case (_, points) =>
+          println(s"Driver: $actualName \nTotal Points: $points")
         }
-      /// Displa the error message if the input is invalid
-      case Left(error) =>
-        println(error)
-      case _ =>
-        println(s"Invalid input '$userInput'. Please enter a valid name.")
+
+      // Show validation error
+      case Left(error) => println(error)
+      // If validation fails unexpectedly
+      case _ => println(s"Invalid input '$userInput'. Please enter a valid name.")
     }
   }
 
@@ -258,6 +257,7 @@ object ConsoleApp extends App {
     }
   }
 
+  // Frontend higher-order function to display total points in ascending order
   private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     val sumWins = getWinsAscending(data)
     //Display results
@@ -295,8 +295,9 @@ object ConsoleApp extends App {
   private def getTotalWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Int] = {
     val totalWins = data.map { case (season, drivers) =>
       val totalRaces = drivers.foldLeft(0) { (sum, driver) => sum + driver._3 }
-      // Return mapped Map
-      season -> totalRaces // seasons are keys, totalRaces are values
+
+      // seasons are keys, totalRaces are values
+      season -> totalRaces
     }
 
     // Return the total wins for seasons
@@ -344,11 +345,12 @@ object ConsoleApp extends App {
   private def getSelectedPoints(data: Map[Int, List[(String, Float, Int)]], inputName: String): Map[String, Float] = {
     val fullName = inputName
     val sumPoints = data.collect { case (_, drivers) =>
-      // Filter selected driver based
-      drivers.filter { case (name, _, _) => namePredicate(name, fullName) }
+      // Filter based on simple function to check if the name matches
+      drivers.filter { case (name, _, _) => name.equalsIgnoreCase(fullName) }
         // Sum selected driver
         .map { case (_, points, _) => points }.sum
-    }.sum // Sum all seasons
+      // Sum all seasons
+    }.sum
 
     // Return the selected driver's total points as a Map
     Map(fullName -> sumPoints)
@@ -362,12 +364,15 @@ object ConsoleApp extends App {
   private def handleInput(validOptions: List[Any])(input: String)(contextMessage: String): Either[String, Either[Int, String]] =
     Try(input.toInt).toOption match {
       case Some(option) if validOptions.contains(option) =>
-        Right(Left(option)) // Return the valid integer input
-      // If parse fails (i.e., is a name and cant be an integer), check if the name is in the list
-      case None if validOptions.contains(input) =>
-        Right(Right(input)) // Return the valid string input
+        // If parse is successful and the option is in the list, return the option
+        Right(Left(option))
+
+      // If parse fails (i.e., is a name and cant be an integer), check if its in the passed list
+      case None if validOptions.map(_.toString.toLowerCase).contains(input.toLowerCase) =>
+        Right(Right(input))
       case _ =>
-        Left(s"Invalid input '$input'. $contextMessage") // Return an error message
+        // Return the error message if the input is invalid
+        Left(s"Invalid input '$input'. $contextMessage")
     }
 
   // Read data from file
@@ -383,15 +388,19 @@ object ConsoleApp extends App {
           // Use foldLeft to accumulate the result in an immutable map
           lines.foldLeft(Map[Int, List[(String, Float, Int)]]()) {
             case (mapData, line: String) =>
-              val splitLine = line.split(",", 2).map(_.trim) // Split the line into season and drivers
+              val splitLine = line.split(",", 2).map(_.trim)
+              // Split the line into season and drivers
               val season = splitLine(0).toInt
-              val allDrivers = splitLine(1).split(",").map(_.trim) // Split the drivers by comma
+              // Split the drivers by comma
+              val allDrivers = splitLine(1).split(",").map(_.trim)
 
               // Process each driver entry and create a list of tuples
               val seasonData = allDrivers.map { driverEntry =>
-                val driverDetails = driverEntry.split(":").map(_.trim) // Split the driver details by colon
+                // Split the driver details by colon
+                val driverDetails = driverEntry.split(":").map(_.trim)
                 val name = driverDetails(0)
-                val stats = driverDetails(1).split(" ").map(_.trim) // Split the stats by space
+                // Split the stats by space
+                val stats = driverDetails(1).split(" ").map(_.trim)
                 val points = stats(0).toFloat
                 val wins = stats(1).toInt
                 (name, points, wins)
@@ -401,11 +410,14 @@ object ConsoleApp extends App {
               mapData + (season -> (mapData.getOrElse(season, List()) ++ seasonData))
           }
       }
-      Right(data) // Return the data as a Right (success) resul
+      // Return the data as a Right (success) resul
+      Right(data)
     } match {
       // Handle the Try result
-      case Success(data) => println("Data loaded successfully"); data // Print success; return the data
-      case Failure(exception) => Left(exception.getMessage) // Return the error message
+      // Print success; return the data if successful
+      case Success(data) => println("Data loaded successfully"); data
+      // Return the error message if the file reading fails
+      case Failure(exception) => Left(exception.getMessage)
     }
   }
 }
