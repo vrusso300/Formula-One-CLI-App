@@ -1,6 +1,6 @@
 # Formula One Statistics Application
 
-This is a Scala-based console application designed to provide various statistics and insights about Formula One seasons and drivers. The application processes data from a text file and allows users to display different statistics based on their input.
+This is a Scala-based console application designed to provide various statistics and insights about Formula One seasons and drivers. The application processes data from a text file and allows users to display different statistics based on their input. Evaluation and Testing are located in the `documents` folder.
 
 ## Features
 
