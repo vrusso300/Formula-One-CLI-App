@@ -28,8 +28,7 @@ This is a Scala-based console application designed to provide various statistics
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/vrusso300/formula-one-stats.git
-    cd formula-one-stats
+    git clone https://github.com/vrusso300/ProgPara_CW1
     ```
 
 2. Open the project in IntelliJ IDEA or your preferred IDE.
