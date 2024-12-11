@@ -6,7 +6,7 @@ This is a Scala-based console application designed to provide various statistics
 
 - View the winners and stats for each season
 - Display detailed stats for a specific season
-- Show the total wins for each season
+- Show the total races for each season
 - Calculate and display average points per season
 - List total points per season in ascending order
 - Display the total points for a specific driver
@@ -54,7 +54,7 @@ Example:
 
 1. **Display winners and stats for each season**: Shows the winner, points, and wins for each season.
 2. **Display stats for a specific season**: Prompts the user to enter a season and displays the stats for that season.
-3. **Display total wins per season**: Shows the total number of wins in each season.
+3. **Display total races per season**: Shows the total number of races in each season.
 4. **Display average points per season**: Shows the average number of points for each season.
 5. **Display total points per season in ascending order**: Lists the total points for each season, sorted in ascending order.
 6. **Display a specific driver's total points**: Prompts for a driver's name and displays their total points.
