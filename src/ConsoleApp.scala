@@ -30,7 +30,7 @@ object ConsoleApp extends App {
   private val actionMap: Map[Int, () => Boolean] = Map( // Map of menu options to lambda functions
     1 -> handleDisplayWinners,
     2 -> handleDisplaySelection,
-    3 -> handleDisplayWins,
+    3 -> handleDisplayRaces,
     4 -> handleDisplayAvg,
     5 -> handleDisplayPointsAscending,
     6 -> handleDisplaySelected,
@@ -136,8 +136,8 @@ object ConsoleApp extends App {
     true
   }
 
-  // Handles the action for displaying total wins
-  private def handleDisplayWins(): Boolean = {
+  // Handles the action for displaying total races
+  private def handleDisplayRaces(): Boolean = {
     println("Option 3 selected...")
     displayRaces(getTotalRaces, mapData)
     true
@@ -209,7 +209,7 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display total wins
+  // Frontend higher-order function to display total races
   private def displayRaces(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     val wins = getWins(data)
     // Display the results using a declarative approach
