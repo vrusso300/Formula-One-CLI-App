@@ -188,7 +188,7 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display a specific season's stats
+  // Function to display a specific season's stats
   private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Please enter the season you want to display:")
     // Get the user input
@@ -210,7 +210,7 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display total races
+  // Function to display total races
   private def displayRaces(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int]): Unit = {
     val wins = getWins(mapData)
     // Display the results using a declarative approach
@@ -219,7 +219,7 @@ object ConsoleApp extends App {
     }.foreach(println)
   }
 
-  // Frontend higher-order function to display average points
+  // Function to display average points
   private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float]): Unit = {
     val avgPoints = getAvgPoints(mapData)
     //Display results
@@ -228,7 +228,7 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display total points in ascending order
+  // Function to display total points in ascending order
   private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float]): Unit = {
     val sumWins = getWinsAscending(mapData)
     //Display results
@@ -237,7 +237,7 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend function to display selected driver's total points
+  // Function to display selected driver's total points
   private def displaySelectedPoints(getSelectedPoints: (Map[Int, List[(String, Float, Int)]], String) => Map[String, Float]): Unit = {
     // Get the user input
     println("Please enter the player you want to display:")
