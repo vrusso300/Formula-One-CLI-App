@@ -20,7 +20,7 @@ This is a Scala-based console application designed to provide various statistics
 
 3. Ensure that the `data.txt` file is located in the `src/resources/` directory.
 
-4. Run the `ConsoleApp.scala` file.
+4. Run the `src/ConsoleApp.scala` file.
 
 5. Follow the on-screen prompts to interact with the application.
 
