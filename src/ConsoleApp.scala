@@ -58,9 +58,6 @@ object ConsoleApp extends App {
   private def validateSeason: String => Either[String, Either[Int, String]] = handleInput(seasonList)(_)(errSeason)
   private def validateMenuInput: String => Either[String, Either[Int, String]] = handleInput(expectedOptions)(_)(errMenu)
 
-  // Etc lambda functions
-  private val sumFloat = (x: Float, y: Float) => x + y
-
   // Main application entry
   private def startApplication(): Unit = {
     println("\nWelcome to the formula one application!")
@@ -102,7 +99,7 @@ object ConsoleApp extends App {
       """|Please select one of the following:
          |  1 - Display winners and stats from each season
          |  2 - Display a specific season's stats
-         |  3 - Display total wins per season
+         |  3 - Display total races per season
          |  4 - Display average points per season
          |  5 - Display total points per season ascending
          |  6 - Display a specific driver's total points
@@ -142,7 +139,7 @@ object ConsoleApp extends App {
   // Handles the action for displaying total wins
   private def handleDisplayWins(): Boolean = {
     println("Option 3 selected...")
-    displayWins(getTotalWins, mapData)
+    displayRaces(getTotalRaces, mapData)
     true
   }
 
@@ -189,15 +186,6 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display total wins
-  private def displayWins(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val wins = getWins(data)
-    // Display the results using a declarative approach
-    wins.map { case (season, totalWins) =>
-      s"Season $season: Total Wins: $totalWins"
-    }.foreach(println)
-  }
-
   // Frontend higher-order function to display a specific season's stats
   private def displaySelectedSeason(getSelectedSeason: (Map[Int, List[(String, Float, Int)]], Int) => Map[Int, List[(String, Float, Int)]], data: Map[Int, List[(String, Float, Int)]]): Unit = {
     println("Please enter the season you want to display:")
@@ -218,6 +206,24 @@ object ConsoleApp extends App {
       case Left(error) =>
         println(error)
 
+    }
+  }
+
+  // Frontend higher-order function to display total wins
+  private def displayRaces(getWins: Map[Int, List[(String, Float, Int)]] => Map[Int, Int], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    val wins = getWins(data)
+    // Display the results using a declarative approach
+    wins.map { case (season, totalRaces) =>
+      s"Season $season: Total Races: $totalRaces"
+    }.foreach(println)
+  }
+
+  // Frontend higher-order function to display average points
+  private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
+    val avgPoints = getAvgPoints(data)
+    //Display results
+    avgPoints.foreach { case (season, average) =>
+      println(f"Season: $season: Average Points: $average%.2f")
     }
   }
 
@@ -248,14 +254,6 @@ object ConsoleApp extends App {
     }
   }
 
-  // Frontend higher-order function to display average points
-  private def displayAvgPoints(getAvgPoints: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
-    val avgPoints = getAvgPoints(data)
-    //Display results
-    avgPoints.foreach { case (season, average) =>
-      println(s"Season: $season: Average Points: $average")
-    }
-  }
 
   // Frontend higher-order function to display total points in ascending order
   private def displayPointsAscending(getWinsAscending: Map[Int, List[(String, Float, Int)]] => Map[Int, Float], data: Map[Int, List[(String, Float, Int)]]): Unit = {
@@ -292,7 +290,7 @@ object ConsoleApp extends App {
   }
 
   // Backend function to get total wins
-  private def getTotalWins(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Int] = {
+  private def getTotalRaces(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Int] = {
     val totalWins = data.map { case (season, drivers) =>
       val totalRaces = drivers.foldLeft(0) { (sum, driver) => sum + driver._3 }
 
@@ -312,8 +310,8 @@ object ConsoleApp extends App {
     def calculateAvg(drivers: List[(String, Float, Int)], total: Float, count: Int): Float = drivers match {
       // Base case, if the list is empty, return the average
       case Nil => if (count == 0) 0 else total / count
-      // Recursive case, sum the points via external sumFloat func and increment the count
-      case (_, points, _) :: tail => calculateAvg(tail, sumFloat(total, points), count + 1)
+      // Recursive case, sum the points and increment the count
+      case (_, points, _) :: tail => calculateAvg(tail, total + points, count + 1)
     }
 
     // Map the seasons to the average points
@@ -332,7 +330,7 @@ object ConsoleApp extends App {
   private def getPointsAscending(data: Map[Int, List[(String, Float, Int)]]): Map[Int, Float] = {
     // Calculate total points for each season
     val sumSeasons: Map[Int, Float] = data.map { case (season, drivers) =>
-      val totalPoints = drivers.foldRight(0f)((driver, sum) => sumFloat(driver._2, sum))
+      val totalPoints = drivers.foldRight(0f)((driver, sum) => driver._2 + sum)
       season -> totalPoints
     }
 
